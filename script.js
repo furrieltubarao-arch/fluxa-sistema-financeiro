@@ -1495,7 +1495,7 @@ function initializeForms() {
 
             closeAllModals();
             updateDashboard();
-            renderCentrosFinanceiros();
+            renderCentros();
         }).catch(error => {
             console.error('Erro ao salvar centro:', error);
             alert('Erro ao salvar centro financeiro');
