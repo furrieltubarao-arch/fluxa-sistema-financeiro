@@ -144,6 +144,21 @@ function loadDataFromAPI() {
         // Validar que temos dados antes de processar
         if (!Array.isArray(financialData)) financialData = [];
         if (!Array.isArray(centers)) centers = [];
+
+        financialData = financialData.map(item => ({
+            ...item,
+            data: item.data || item.date,
+            date: item.date || item.data,
+            descricao: item.descricao || item.description || '',
+            description: item.description || item.descricao || '',
+            centroId: item.centroId || item.centro_id || 'default',
+            tipo: item.tipo || item.type || '',
+            type: item.type || item.tipo || '',
+            categoria: item.categoria || item.category || '',
+            category: item.category || item.categoria || '',
+            valor: item.valor != null ? item.valor : item.amount != null ? item.amount : 0,
+            valorInvestido: item.valorInvestido != null ? item.valorInvestido : item.amount != null ? item.amount : 0
+        }));
         
         // Organize financial data by type
         appState.receitas = financialData.filter(item => item.type === 'receita');
@@ -1900,29 +1915,35 @@ function updateMonthlySummary() {
     
     // Processar receitas
     filterBySelectedCentro(appState.receitas).forEach(r => {
-        const mes = r.data.substring(0, 7); // YYYY-MM
+        const date = r.data || r.date;
+        if (!date) return;
+        const mes = date.substring(0, 7); // YYYY-MM
         if (!monthlyData[mes]) {
             monthlyData[mes] = { receitas: 0, despesas: 0, investimentos: 0 };
         }
-        monthlyData[mes].receitas += r.valor;
+        monthlyData[mes].receitas += r.valor || 0;
     });
     
     // Processar despesas
     filterBySelectedCentro(appState.despesas).forEach(d => {
-        const mes = d.data.substring(0, 7); // YYYY-MM
+        const date = d.data || d.date;
+        if (!date) return;
+        const mes = date.substring(0, 7); // YYYY-MM
         if (!monthlyData[mes]) {
             monthlyData[mes] = { receitas: 0, despesas: 0, investimentos: 0 };
         }
-        monthlyData[mes].despesas += d.valor;
+        monthlyData[mes].despesas += d.valor || 0;
     });
     
     // Processar investimentos
     filterBySelectedCentro(appState.investimentos).forEach(inv => {
-        const mes = inv.data.substring(0, 7); // YYYY-MM
+        const date = inv.data || inv.date;
+        if (!date) return;
+        const mes = date.substring(0, 7); // YYYY-MM
         if (!monthlyData[mes]) {
             monthlyData[mes] = { receitas: 0, despesas: 0, investimentos: 0 };
         }
-        monthlyData[mes].investimentos += inv.valorInvestido;
+        monthlyData[mes].investimentos += inv.valorInvestido || 0;
     });
     
     // Ordenar meses (mais recente primeiro)
@@ -4000,8 +4021,9 @@ function formatCurrency(value) {
 }
 
 function formatDate(dateString) {
-    const [year, month, day] = dateString.split('-');
-    return `${day}/${month}/${year}`;
+    if (!dateString) return '';
+    const [year, month, day] = String(dateString).split('-');
+    return `${day || ''}/${month || ''}/${year || ''}`;
 }
 
 function capitalize(str) {
