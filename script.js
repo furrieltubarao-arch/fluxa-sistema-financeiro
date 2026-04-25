@@ -151,9 +151,17 @@ function loadDataFromAPI() {
         appState.investimentos = financialData.filter(item => item.type === 'investimento');
         appState.centrosFinanceiros = centers.map(center => ({
             id: center.id.toString(),
-            nome: center.name,
+            nome: center.name || center.nome,
             type: center.type,
-            balance: center.balance
+            balance: center.balance,
+            descricao: center.description || center.descricao || '',
+            orcamento: center.orcamento != null ? parseFloat(center.orcamento) : 0,
+            alertaPercentual: center.alertaPercentual != null
+                ? parseFloat(center.alertaPercentual)
+                : center.alerta_percentual != null
+                    ? parseFloat(center.alerta_percentual)
+                    : 90,
+            meta: center.meta || 0
         }));
 
         console.log('✅ Data organized:', {
@@ -214,7 +222,11 @@ function saveCentroFinanceiro(data) {
     const apiData = {
         name: data.nome,
         type: data.type || 'conta',
-        balance: data.balance || 0
+        balance: data.balance || 0,
+        description: data.descricao || '',
+        orcamento: data.orcamento || 0,
+        alertaPercentual: data.alertaPercentual || 90,
+        meta: data.meta || 0
     };
 
     return apiRequest('/api/financial-centers', {
@@ -227,7 +239,11 @@ function updateCentroFinanceiro(id, data) {
     const apiData = {
         name: data.nome,
         type: data.type,
-        balance: data.balance
+        balance: data.balance,
+        description: data.descricao || '',
+        orcamento: data.orcamento || 0,
+        alertaPercentual: data.alertaPercentual || 90,
+        meta: data.meta || 0
     };
 
     return apiRequest(`/api/financial-centers/${id}`, {

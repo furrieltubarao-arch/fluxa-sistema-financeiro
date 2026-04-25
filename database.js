@@ -66,8 +66,25 @@ class Database {
                     name TEXT NOT NULL,
                     type TEXT DEFAULT 'conta',
                     balance REAL DEFAULT 0,
+                    description TEXT DEFAULT '',
+                    orcamento REAL DEFAULT 0,
+                    alerta_percentual REAL DEFAULT 90,
+                    meta REAL DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
+            `);
+
+            await this.pool.query(`
+                ALTER TABLE financial_centers ADD COLUMN IF NOT EXISTS description TEXT DEFAULT '';
+            `);
+            await this.pool.query(`
+                ALTER TABLE financial_centers ADD COLUMN IF NOT EXISTS orcamento REAL DEFAULT 0;
+            `);
+            await this.pool.query(`
+                ALTER TABLE financial_centers ADD COLUMN IF NOT EXISTS alerta_percentual REAL DEFAULT 90;
+            `);
+            await this.pool.query(`
+                ALTER TABLE financial_centers ADD COLUMN IF NOT EXISTS meta REAL DEFAULT 0;
             `);
 
             await this.createAdminUser();
@@ -125,6 +142,10 @@ class Database {
                 name TEXT NOT NULL,
                 type TEXT DEFAULT 'conta',
                 balance REAL DEFAULT 0,
+                description TEXT DEFAULT '',
+                orcamento REAL DEFAULT 0,
+                alerta_percentual REAL DEFAULT 90,
+                meta REAL DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
@@ -133,6 +154,18 @@ class Database {
                 console.error('Erro ao criar tabela financial_centers:', err);
             }
         });
+            this.db.run(`
+                ALTER TABLE financial_centers ADD COLUMN IF NOT EXISTS description TEXT DEFAULT '';
+            `);
+            this.db.run(`
+                ALTER TABLE financial_centers ADD COLUMN IF NOT EXISTS orcamento REAL DEFAULT 0;
+            `);
+            this.db.run(`
+                ALTER TABLE financial_centers ADD COLUMN IF NOT EXISTS alerta_percentual REAL DEFAULT 90;
+            `);
+            this.db.run(`
+                ALTER TABLE financial_centers ADD COLUMN IF NOT EXISTS meta REAL DEFAULT 0;
+            `);
     }
 
     async createAdminUser() {
@@ -358,20 +391,28 @@ class Database {
     }
 
     createFinancialCenter(userId, data, callback) {
-        const { name, type = 'conta', balance = 0 } = data;
+        const {
+            name,
+            type = 'conta',
+            balance = 0,
+            description = '',
+            orcamento = 0,
+            alertaPercentual = 90,
+            meta = 0
+        } = data;
         if (this.type === 'postgres') {
             this.pool.query(`
-                INSERT INTO financial_centers (user_id, name, type, balance)
-                VALUES ($1, $2, $3, $4)
+                INSERT INTO financial_centers (user_id, name, type, balance, description, orcamento, alerta_percentual, meta)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                 RETURNING id
-            `, [userId, name, type, balance])
+            `, [userId, name, type, balance, description, orcamento, alertaPercentual, meta])
                 .then((res) => callback(null, res.rows[0].id))
                 .catch((err) => callback(err, null));
         } else {
             this.db.run(`
-                INSERT INTO financial_centers (user_id, name, type, balance)
-                VALUES (?, ?, ?, ?)
-            `, [userId, name, type, balance], function(err) {
+                INSERT INTO financial_centers (user_id, name, type, balance, description, orcamento, alerta_percentual, meta)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `, [userId, name, type, balance, description, orcamento, alertaPercentual, meta], function(err) {
                 callback(err, this ? this.lastID : null);
             });
         }
@@ -388,19 +429,27 @@ class Database {
     }
 
     updateFinancialCenter(id, userId, data, callback) {
-        const { name, type, balance } = data;
+        const {
+            name,
+            type,
+            balance,
+            description = '',
+            orcamento = 0,
+            alertaPercentual = 90,
+            meta = 0
+        } = data;
         if (this.type === 'postgres') {
             this.pool.query(`
-                UPDATE financial_centers SET name = $1, type = $2, balance = $3
-                WHERE id = $4 AND user_id = $5
-            `, [name, type, balance, id, userId])
+                UPDATE financial_centers SET name = $1, type = $2, balance = $3, description = $4, orcamento = $5, alerta_percentual = $6, meta = $7
+                WHERE id = $8 AND user_id = $9
+            `, [name, type, balance, description, orcamento, alertaPercentual, meta, id, userId])
                 .then(() => callback(null))
                 .catch(callback);
         } else {
             this.db.run(`
-                UPDATE financial_centers SET name = ?, type = ?, balance = ?
+                UPDATE financial_centers SET name = ?, type = ?, balance = ?, description = ?, orcamento = ?, alerta_percentual = ?, meta = ?
                 WHERE id = ? AND user_id = ?
-            `, [name, type, balance, id, userId], callback);
+            `, [name, type, balance, description, orcamento, alertaPercentual, meta, id, userId], callback);
         }
     }
 
