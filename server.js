@@ -16,6 +16,11 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('.')); // Servir arquivos estáticos
 
+// Servir favicon
+app.get('/favicon.ico', (req, res) => {
+    res.sendFile(__dirname + '/LOGO.png.png');
+});
+
 // Middleware de autenticação
 function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization'];
